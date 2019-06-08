@@ -56,9 +56,33 @@
         <div class="form-group">
           <label for>Password</label>
           <input type="password" class="form-control" v-model="password" />
+          <p class="text-muted ml-1 mt-1" @click="showModal = true">
+            Olvidaste tu password ?
+          </p>
+        </div>
+        <div class="modal d-inline" v-if="showModal">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Recupera tu password</h5>
+                <button type="button" class="close" @click="showModal = false">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <form novalidate @submit.prevet="submitModal">
+                <div class="modal-body">
+                  <label>Mail</label>
+                  <input type="email" class="form-control" v-model="recpass" />
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary">Enviar</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
         <div
-          class="alert alert-danger alert-dismissible fade show"
+          class="alert alert-danger alert-dismissible position-fixed centro"
           v-if="alertPass"
         >
           {{ error }}
@@ -92,6 +116,7 @@
 <script>
 import { db } from "../db";
 import firebase from "firebase";
+import { setTimeout } from "timers";
 export default {
   name: "login",
   data() {
@@ -103,7 +128,9 @@ export default {
       alertUser: false,
       alertMail: false,
       alertPass: false,
-      error: ""
+      error: "",
+      showModal: false,
+      recpass: ""
     };
   },
   firestore: {
@@ -117,7 +144,8 @@ export default {
       if (y == undefined) {
         return (
           (this.error = "El usuario no corresponde al mail registrado"),
-          (this.alertPass = true)
+          (this.alertPass = true),
+          setTimeout(() => (this.alertPass = false), 3000)
         );
       } else {
         firebase
@@ -133,6 +161,7 @@ export default {
             console.log(err);
             this.error = err.message;
             this.alertPass = true;
+            setTimeout(() => (this.alertPass = false), 3000);
           });
       }
     },
@@ -140,6 +169,7 @@ export default {
       let a = this.usuarios.find(user => user.id == this.user);
       if (a == undefined) {
         this.alertUser = true;
+        setTimeout(() => (this.alertUser = false), 3000);
         this.user = "";
       }
     },
@@ -147,8 +177,17 @@ export default {
       let a = this.usuarios.find(user => user.mail == this.mail);
       if (a == undefined) {
         this.alertMail = true;
+        setTimeout(() => (this.alertMail = false), 3000);
         this.mail = "";
       }
+    },
+    submitModal: function() {
+      let actionCodeSettings = {
+        url: "http://localhost:8080/#/login",
+        handleCodeInApp: false
+      };
+      firebase.auth().sendPasswordResetEmail(this.recpass, actionCodeSettings);
+      this.showModal = false;
     }
   }
 };
@@ -165,5 +204,15 @@ export default {
 }
 .margin-top {
   margin-top: 6rem;
+}
+.centro {
+  left: 0;
+  right: 0;
+  z-index: 2;
+  top: 50%;
+  margin: auto;
+
+  width: 500px;
+  height: 50px;
 }
 </style>
